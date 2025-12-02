@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>App de Listas</title>
+<style>
+ body{font-family:Arial;margin:0;background:#f3f3f3;}header{background:#222;color:#fff;padding:15px;text-align:center;font-size:22px;}#app{padding:20px;max-width:900px;margin:auto;} .card{background:#fff;padding:15px;border-radius:10px;box-shadow:0 2px 6px #0002;margin-bottom:15px;} .btn{padding:8px 12px;border:0;border-radius:6px;background:#222;color:#fff;cursor:pointer;margin:5px 0;} input,textarea,select{width:100%;padding:8px;margin:5px 0 10px;}
+ .sub{margin-left:20px;border-left:3px solid #ddd;padding-left:10px;}
+ .formBox{background:#fff;padding:15px;border-radius:10px;box-shadow:0 2px 6px #0002;margin-bottom:15px;}
+</style>
+</head>
+<body>
+<header>Meu App de Listas</header>
+<div id="app">
+ 
+ <div class="formBox">
+   <h3>Criar Categoria</h3>
+   <input id="catNome" placeholder="Nome da categoria" />
+   <button class="btn" onclick="criarCategoria()">Adicionar</button>
+ </div>
+
+ <div id="listaCategorias"></div>
+</div>
+
+<script>
+let dados = JSON.parse(localStorage.getItem("listas")) || [];
+function salvar(){localStorage.setItem("listas", JSON.stringify(dados));render();}
+
+function criarCategoria(){
+ const nome = document.getElementById("catNome").value.trim();
+ if(!nome) return;
+ dados.push({nome, sub:[], itens:[]});
+ document.getElementById("catNome").value="";
+ salvar();
+}
+
+function criarSub(i){
+ const nome = document.getElementById(`subInput_${i}`).value.trim();
+ if(!nome) return;
+ dados[i].sub.push({nome, itens:[]});
+ salvar();
+}
+
+function criarItem(idObj, key){
+ const base = document.getElementById(key);
+ const nome = base.querySelector(".i_nome").value;
+ const desc = base.querySelector(".i_desc").value;
+ const status = base.querySelector(".i_status").value;
+ const tags = base.querySelector(".i_tags").value;
+ const avaliacao = base.querySelector(".i_av").value;
+ const comentario = base.querySelector(".i_com").value;
+
+ idObj.itens.push({nome,desc,status,tags,avaliacao,comentario});
+ salvar();
+}
+
+function formItem(key){
+ return `
+ <div id="${key}" class='formBox'>
+   <h4>Novo Item</h4>
+   <input class='i_nome' placeholder='Nome'>
+   <textarea class='i_desc' placeholder='Descrição'></textarea>
+   <select class='i_status'>
+     <option>Finalizado</option>
+     <option>Em andamento</option>
+     <option>Mais tarde</option>
+   </select>
+   <input class='i_tags' placeholder='Tags (separadas por vírgula)'>
+   <input class='i_av' placeholder='Avaliação (0-5)'>
+   <textarea class='i_com' placeholder='Comentários'></textarea>
+   <button class='btn' onclick='criarItem(${key.includes("sub")?"dados["+key.split("_")[1]+"].sub["+key.split("_")[2]+"]":"dados["+key.split("_")[1]+"]"}, "${key}")'>Salvar Item</button>
+ </div>`;
+}
+
+function render(){
+ const area = document.getElementById("listaCategorias");
+ area.innerHTML = "";
+
+ dados.forEach((cat,i)=>{
+   let html = `<div class='card'>
+   <h2>${cat.nome}</h2>
+
+   <h4>Adicionar Item</h4>
+   ${formItem(`cat_${i}`)}
+
+   <h4>Itens</h4>
+   ${cat.itens.map(item=>itemCard(item)).join("")}
+
+   <h4>Subcategorias</h4>
+   <input id='subInput_${i}' placeholder='Nome da subcategoria'>
+   <button class='btn' onclick='criarSub(${i})'>Adicionar Subcategoria</button>
+   <div class='sub'>${cat.sub.map((s,j)=>subCard(s,i,j)).join("")}</div>
+   </div>`;
+
+   area.innerHTML += html;
+ });
+}
+
+function subCard(sub,ci,si){
+ return `<div class='card'>
+ <h3>${sub.nome}</h3>
+ <h4>Novo Item</h4>
+ ${formItem(`sub_${ci}_${si}`)}
+ <div>${sub.itens.map(item=>itemCard(item)).join("")}</div>
+ </div>`;
+}
+
+function itemCard(it){
+ return `<div class='card' style='background:#fafafa'>
+ <strong>${it.nome}</strong><br>
+ ${it.desc}<br>
+ <em>Status:</em> ${it.status}<br>
+ <em>Tags:</em> ${it.tags}<br>
+ <em>Avaliação:</em> ${it.avaliacao}<br>
+ <em>Comentários:</em> ${it.comentario}<br>
+ </div>`;
+}
+
+render();
+</script>
+</body></html>
